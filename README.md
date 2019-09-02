@@ -1,5 +1,5 @@
 # Automatic_Sleep_Scoring
-The goal is to create an automatic (preferably online) scoring of sleep stage scoring using raw EEG signals.
+The goal is to create an automatic (preferably online) sleep stage scoring of raw EEG signals.
 
 
 EEG signals are from https://www.physionet.org/content/sleep-edfx/1.0.0/
