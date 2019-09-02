@@ -53,14 +53,10 @@ for f in range (info.shape[0]):
 #     print(rec.columns)
     rec = rec.drop(['Resp oro-nasal','EMG submental', 'Temp rectal'],axis=1)
     cols = rec.columns
-    info.loc[f,cols[0] + '_min'] = rec.loc[:,cols[0]].min()
-    info.loc[f,cols[0] + '_max'] = rec.loc[:,cols[0]].max()
-    info.loc[f,cols[1] + '_min'] = rec.loc[:,cols[1]].min()
-    info.loc[f,cols[1] + '_max'] = rec.loc[:,cols[1]].max()
-    info.loc[f,cols[2] + '_min'] = rec.loc[:,cols[2]].min()
-    info.loc[f,cols[2] + '_max'] = rec.loc[:,cols[2]].max()
-    info.loc[f,cols[3] + '_min'] = rec.loc[:,cols[3]].min()
-    info.loc[f,cols[3] + '_max'] = rec.loc[:,cols[3]].max()
+    for i in range(4):
+        info.loc[f,cols[i] + '_min'] = rec.loc[:,cols[i]].min()
+        info.loc[f,cols[i] + '_max'] = rec.loc[:,cols[i]].max()
+   
     
     
     keystr = info.loc[f,'PSG_file'][18:21]
