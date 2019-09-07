@@ -1,8 +1,20 @@
 # Automatic_Sleep_Scoring
+
 The goal is to create an automatic (preferably online) sleep stage scoring of raw EEG signals.
 
+## Setup
 
 EEG signals are from https://www.physionet.org/content/sleep-edfx/1.0.0/
+
+[Download zip file](https://www.physionet.org/static/published-projects/sleep-edfx/sleep-edf-database-expanded-1.0.0.zip) and unzip into `$HOME/eeg`.
+
+```bash
+pip install -r requirements.txt
+
+python code/EDF_load_process.py --home $HOME
+```
+
+## Data description
 
 Files are named in the form SC4ssNEO-PSG.edf where ss is the subject number, and N is the night. The first nights of subjects 36 and 52, and the second night of subject 13, were lost due to a failing cassette or laserdisk.
 
