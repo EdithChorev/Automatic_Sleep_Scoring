@@ -55,9 +55,9 @@ mapping = {'EOG horizontal': 'eog',
            'Event marker': 'misc'}
 
 data_dir = "/home/edith//Documents/EEG/2018/"  
-output_dir_fpz = "/home/edith//Documents/EEG/FPZ/"
-output_dir_pz = "/home/edith//Documents/EEG/PZ/"
-output_dir_eog = "/home/edith//Documents/EEG/EOG/"
+output_dir_fpz = "/home/edith//Documents/EEG/2018/FPZ/"
+output_dir_pz = "/home/edith//Documents/EEG/2018/PZ/"
+output_dir_eog = "/home/edith//Documents/EEG/2018/EOG/"
 
 
 keyword = 'Hypnogram'
@@ -69,6 +69,7 @@ for fn in os.listdir(data_dir):
         file_names.append(fn)
 # loading EDF/EDF+ files and extracting the raw signals and lables 
 # updating info data frame with info about channels and files locations
+
 for fn in file_names:
     data = mne.io.read_raw_edf(data_dir + fn, 
                                   montage = None, misc = None, stim_channel = None, \
@@ -98,11 +99,11 @@ for fn in file_names:
        label = annot[i]["description"]
        label = ann2label[label]
        # detecting data which is wrongly or unlabed
-       if label !=UNKNOWN:
+       if label != UNKNOWN:
            if duration % EPOCH_SEC_SIZE != 0:
                raise Exception ("something wrong with epoch length")
            duration_epoch = int(duration / EPOCH_SEC_SIZE)
-           label_epoch = np.ones(duration_epoch, dtype=np.int) * label
+           label_epoch = np.ones(int(duration_epoch*sampling_rate*EPOCH_SEC_SIZE), dtype=np.int) * label
            labels.append(label_epoch)
            idx = int(onset * sampling_rate)+np.arange(duration * sampling_rate,dtype=np.int) 
            label_idx.append(idx)
@@ -123,12 +124,9 @@ for fn in file_names:
         print ("before remove extra labels: {}, {}".format(select_idx.shape, labels.shape))
         extra_idx = np.setdiff1d(label_idx, select_idx)
         # Trim the tail
-        if np.all(extra_idx > selecduration_epocht_idx[-1]):
-            n_trims = len(select_idx) % int(EPOCH_SEC_SIZE * sampling_rate)
-            n_label_trims = int(math.ceil(n_trims / (EPOCH_SEC_SIZE * sampling_rate)))
-            select_idx = select_idx[:-n_trims]
-            labels = labels[:-n_label_trims]
-        print ("after remove extra labels: {}, {}".format(select_idx.shape, labels.shape))
+        if np.all(extra_idx > select_idx[-1]):
+            labels = labels[select_idx]
+    print ("after remove extra labels: {}, {}".format(select_idx.shape, labels.shape))
     
     # remove bad times from raw data
     raw_fpz = raw_ch_fpz.values[select_idx]
@@ -141,7 +139,7 @@ for fn in file_names:
     n_epochs = len(raw_fpz) / (EPOCH_SEC_SIZE * sampling_rate)
 
     y = labels.astype(np.int32)
-    x = np.asarray(np.split(raw_fpz, n_epochs)).astype(np.float32)
+    x = np.asarray(raw_fpz,dtype=np.float32)
     assert len(x) == len(y)
 
     #select sleep periods +- 1 h from first and last sleep stage
@@ -149,7 +147,7 @@ for fn in file_names:
     nw_idx = np.where(y != stage_dict["W"])[0]
     start_idx = nw_idx[0] - (w_edge_mins * 2)
     end_idx = nw_idx[-1] + (w_edge_mins * 2)
-    if start_idx < 0: start_idx = 0
+    if start_idx <0: start_idx = 0
     if end_idx >= len(y): end_idx = len(y) - 1
     select_idx = np.arange(start_idx, end_idx+1)
     print("Data before selection: {}, {}".format(x.shape, y.shape))
@@ -170,7 +168,7 @@ for fn in file_names:
     np.savez(output_dir_fpz+filename, **save_dict)
 
      
-    x = np.asarray(np.split(raw_pz, n_epochs)).astype(np.float32)
+    x = np.asarray(raw_pz,dtype=np.float32)
     x = x[select_idx]
     save_dict = {
         "x": x, 
@@ -181,7 +179,7 @@ for fn in file_names:
     }
     np.savez(output_dir_pz+filename, **save_dict)
 
-    x = np.asarray(np.split(raw_eog, n_epochs)).astype(np.float32)
+    x = np.asarray(raw_eog,dtype=np.float32)
     x = x[select_idx]
     save_dict = {
         "x": x, 
