@@ -1,17 +1,17 @@
-# adapted from akaraspt 
+# adapted from akaraspt
 # https://github.com/akaraspt/deepsleepnet/blob/master/prepare_physionet.py#L86
 
 import argparse
+from datetime import datetime
+import os
+import math
 
-
-import numpy as np
 import matplotlib as plt
-import pandas as pd
 import mne as mn
 import mne.io
-import math
-import os
-from datetime import datetime
+import numpy as np
+import pandas as pd
+
 
 EPOCH_SEC_SIZE = 30
 #label values
@@ -58,11 +58,10 @@ mapping = {'EOG horizontal': 'eog',
 
 
 def setup_directories(home):
-    # data_dir = "/home/edith//Documents/EEG/2018/"  
+    # data_dir = "/home/edith//Documents/EEG/2018/"
     # output_dir_fpz = "/home/edith//Documents/EEG/2018/FPZ/"
     # output_dir_pz = "/home/edith//Documents/EEG/2018/PZ/"
     # output_dir_eog = "/home/edith//Documents/EEG/2018/EOG/"
-
 
     directories = {
         'raw-data': os.path.join(home, 'eeg', 'sleep-edf-database-expanded-1.0.0', 'sleep-cassette'),
@@ -84,6 +83,7 @@ def get_file_list(raw_dir):
     print('found {} files in {}'.format(len(file_names), raw_dir))
     return file_names
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
     keyword = 'Hypnogram'
     info= pd.DataFrame()
-# loading EDF/EDF+ files and extracting the raw signals and lables 
+# loading EDF/EDF+ files and extracting the raw signals and lables
 # updating info data frame with info about channels and files locations
 
     data_dir = directories['raw-data']
@@ -117,15 +117,15 @@ if __name__ == '__main__':
         # read raw data from file each channel seperatly for flexibility later on
         sampling_rate=data.info['sfreq']
         times = data[0][1] * 100
-       
+
         raw_ch_fpz = pd.DataFrame(data[0][0].T,columns=['raw'])
         raw_ch_pz = pd.DataFrame(data[1][0].T,columns=['raw'])
         raw_ch_eog = pd.DataFrame(data[2][0].T,columns=['raw'])
-        
+
         data.set_channel_types(mapping)
         data_orig_time = data.annotations.orig_time
-        
-        # find and read annotation file 
+
+        # find and read annotation file
         for fname in os.listdir(data_dir):
             if (keyword in fname) and (fn[:6] in fname):
                 annot = mn.read_annotations(os.path.join(data_dir, fname))
@@ -145,7 +145,7 @@ if __name__ == '__main__':
                duration_epoch = int(duration / EPOCH_SEC_SIZE)
                label_epoch = np.ones(int(duration_epoch*sampling_rate*EPOCH_SEC_SIZE), dtype=np.int) * label
                labels.append(label_epoch)
-               idx = int(onset * sampling_rate)+np.arange(duration * sampling_rate,dtype=np.int) 
+               idx = int(onset * sampling_rate)+np.arange(duration * sampling_rate,dtype=np.int)
                label_idx.append(idx)
            else:
                idx = int(onset * sampling_rate) + np.arange(duration * sampling_rate, dtype=np.int)
@@ -159,7 +159,7 @@ if __name__ == '__main__':
             select_idx = np.arange(len(raw_ch_fpz))
 
         label_idx = np.hstack(label_idx)
-        select_idx = np.intersect1d(select_idx, label_idx)    
+        select_idx = np.intersect1d(select_idx, label_idx)
         if len(label_idx) > len(select_idx):
             print ("before remove extra labels: {}, {}".format(select_idx.shape, labels.shape))
             extra_idx = np.setdiff1d(label_idx, select_idx)
@@ -167,7 +167,7 @@ if __name__ == '__main__':
             if np.all(extra_idx > select_idx[-1]):
                 labels = labels[select_idx]
         print ("after remove extra labels: {}, {}".format(select_idx.shape, labels.shape))
-        
+
         # remove bad times from raw data
         raw_fpz = raw_ch_fpz.values[select_idx]
         raw_pz = raw_ch_pz.values[select_idx]
@@ -197,36 +197,36 @@ if __name__ == '__main__':
 
         # Save
         filename=fn.replace('-PSG.edf','.npz')
-        
+
         save_dict = {
-            "x": x, 
-            "y": y, 
+            "x": x,
+            "y": y,
             "fs": sampling_rate,
             "ch_label": 'fpz',
-            
+
         }
         np.savez(output_dir_fpz+filename, **save_dict)
 
-         
+
         x = np.asarray(raw_pz,dtype=np.float32)
         x = x[select_idx]
         save_dict = {
-            "x": x, 
-            "y": y, 
+            "x": x,
+            "y": y,
             "fs": sampling_rate,
             "ch_label": 'pz',
-            
+
         }
         np.savez(output_dir_pz+filename, **save_dict)
 
         x = np.asarray(raw_eog,dtype=np.float32)
         x = x[select_idx]
         save_dict = {
-            "x": x, 
-            "y": y, 
+            "x": x,
+            "y": y,
             "fs": sampling_rate,
             "ch_label": 'eog',
-            
+
         }
         np.savez(output_dir_eog+filename, **save_dict)
         print ("\n=======================================\n")
