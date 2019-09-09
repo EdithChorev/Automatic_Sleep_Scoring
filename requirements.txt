@@ -2,3 +2,5 @@ numpy
 mne
 matplotlib
 pandas
+tensorflow==1.14.0
+Keras==2.2.5
