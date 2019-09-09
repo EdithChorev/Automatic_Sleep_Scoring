@@ -131,7 +131,7 @@ class SeqDataLoader(object):
         print (" ")
 
         #print ("Training set: n_subjects={}".format(len(data_train)))
-        n_train_examples = 0
+        #n_train_examples = 0
         
         # for d in data_train:
         #     print (d.shape)
@@ -183,13 +183,16 @@ class SeqDataLoader(object):
             print ("{}: {}".format(class_dict[c], n_samples))
         
 classes = ['W', 'N1', 'N2', 'N3', 'REM']
-data_loader = SeqDataLoader('/home/edith/Documents/EEG/2018/', 10, 1, classes=classes)
-X_train, y_train, X_test, y_test = data_loader.load_data(seq_len=10, n_files=None)
-
-np.save("fold1_X",X_train)
+for ind in range(10):
+    data_loader = SeqDataLoader('/home/edith/Documents/EEG/2018/', 10, ind, classes=classes)
+    X_train, y_train, X_test, y_test = data_loader.load_data(seq_len=10, n_files=None)
+    fname="fold"+str(ind)+"_X"
+    np.save(fname,X_test)
+    fname="fold"+str(ind)+"_Y"
+    np.save(fname,y_test)
 # data_loader = SeqDataLoader('_load_npzlist_files(self, npz_files)/home/edith/Documents/EEG/2018', 10, 1, classes=classes)
 # data_loader = SeqDataLoader('/home/edith/Documents/EEG/2018', 10, 1, classes=classes)
 # data_loader = SeqDataLoader('/home/edith/Documents/EEG/2018', 10, 1, classes=classes)
 #data,labels,sampling_rate=data_loader.load_npz_file ('/home/edith/Documents/EEG/2018/FPZ/SC4001E0.npz')   
 #data,labels,sampling_rate=data_loader._load_npzlist_files (['/home/edith/Documents/EEG/2018/FPZ/SC4001E0.npz','/home/edith/Documents/EEG/2018/FPZ/SC4102E0.npz'])   
-print(X_test.shape)
+    print(X_test.shape)
