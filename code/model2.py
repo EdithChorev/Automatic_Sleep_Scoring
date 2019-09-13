@@ -110,7 +110,7 @@ def w_categorical_crossentropy(y_true, y_pred):
         loss = weighted_categorical_crossentropy(weights)
         model.compile(loss=loss,optimizer='adam')
     """
-    weights=np.array([0.18608124, 0.13560335, 0.43690263, 0.08632019, 0.15509259])
+    weights=np.array([1-0.18608124, 1-0.13560335, 1-0.43690263, 1-0.08632019, 1-0.15509259])
     weights = K.variable(weights)
     # scale predictions so that the class probas of each sample sum to 1
     y_pred /= K.sum(y_pred, axis=-1, keepdims=True)
@@ -120,20 +120,31 @@ def w_categorical_crossentropy(y_true, y_pred):
     loss = y_true * K.log(y_pred) * weights
     loss = -K.sum(loss, -1)
     return loss
+def validate_model(y_true,y_pred):
+    # loss = w_categorical_crossentropy(y_true, y_pred)
+    y_pred = np.argmax(y_pred,axis=2)
+    y_true = np.argmax(y_true,axis=2)
+    f1 = f1_score(y_true, y_pred,labels=range(5))
+    ck = cohen_kappa_score(y_true, y_pred,labels=range(5))
+    cm = confusion_matrix(y_true, y_pred, labels=range(5))
+    acc = accuracy_score(y_true, y_true)
+    return  f1, ck, cm, acc
 
-    
 
 def run_all():
     history = History()
     acc_tr = []
     loss_tr = []
+    loss_val = []
+    acc_val = []
+    f1_s =[]
     cm=[]
     ck_score=[]
     batch_size = 4
     num_epochs = 10
     num_channels = 3
     epi_samples =3000
-    seq_len = 10
+    seq_len = 5
     x_shaped=(num_channels,epi_samples,1)
     model=build_merged_model(keep_proba=0.5, x_shaped=x_shaped,seq_len=10)
     optimizer = keras.optimizers.Adam(lr=0.0001,clipnorm=1.0)
@@ -143,33 +154,48 @@ def run_all():
     print(model.summary())
     val_fold = np.random.permutation(10)
     for fold in range(1):
+        X_test,  y_test  = get_data(val_fold[fold],seq_len)
         if fold != val_fold[fold]:
             X_train,  y_train  = get_data(fold,seq_len)
             history=model.fit([X_train.reshape(-1,seq_len,num_channels,epi_samples,1),X_train.reshape(-1,seq_len,num_channels,epi_samples,1)],
                     y_train, batch_size=batch_size, epochs=num_epochs, verbose=1, 
-                    callbacks=[history])#,validation_data=([X_test.reshape(-1,3,3000,1),X_test.reshape(-1,3,3000,1)],y_test),
+                    validation_data=([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)],y_test),
+                    validation_freq=10, callbacks=[history])#,validation_data=([X_test.reshape(-1,3,3000,1),X_test.reshape(-1,3,3000,1)],y_test),
             
             history_dict=history.history 
             json.dump(history_dict, open('/home/edith/Documents/EEG/history.json', 'w'))   
             acc_tr.append(history_dict['acc'])
             loss_tr.append(history_dict['loss'])
+            acc_val.append(history_dict['val_acc'])
+            loss_val.append(history_dict['val_loss'])
             model.save('model2.h5')
-            X_test,  y_test  = get_data(val_fold[fold],seq_len)
-            y_hat=model.predict([X_test.reshape(-1,num_channels,epi_samples,1),X_test.reshape(-1,num_channels,epi_samples,1)], batch_size=batch_size, verbose=1)
-            cm.append(confusion_matrix(y_test, y_hat, labels=range(5)))
-            ck_score.append(cohen_kappa_score(y_test, y_hat))
+            
+            # y_hat=model.predict([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)], batch_size=batch_size, verbose=1)
+            # f1, ck, confm, acc = validate_model(y_test,y_hat)
+            # cm.append(confm)
+            # f1_s.append(f1)
+            # #loss_tst.append(loss)
+            # acc_tst.append(acc)
+            # ck_score.append(ck)
                     # callbacks=keras.callbacks.EarlyStopping(monitor='loss',restore_best_weights=True) )
     
     ## add train data to eval
     # balance data
     # log training history
     # 
-    with open('confusion.pkl', 'wb') as f:
-        pickle.dump(cm, f)
-    with open('ck_score.pkl', 'wb') as f:
-        pickle.dump(ck_score, f)
-    
+    # with open('confusion.pkl', 'wb') as f:
+    #     pickle.dump(cm, f)
+    # with open('ck_score.pkl', 'wb') as f:
+    #     pickle.dump(ck_score, f)
+    # # with open('tst_loss_score.pkl', 'wb') as f:
+    # #     pickle.dump(loss_tst, f)
+    # with open('tst_acc_score.pkl', 'wb') as f:
+    #     pickle.dump(acc_tst, f)
+    # with open('f1_score.pkl', 'wb') as f:
+    #     pickle.dump(f1_s, f)    
     np.save('train_acc_res',np.array(acc_tr))
     np.save('train_loss_res',np.array(loss_tr))
+    np.save('val_acc_res',np.array(acc_val))
+    np.save('val_loss_res',np.array(loss_val))
     pass
 run_all()
