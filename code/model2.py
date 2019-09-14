@@ -107,7 +107,7 @@ def w_categorical_crossentropy(y_true, y_pred):
         loss = weighted_categorical_crossentropy(weights)
         model.compile(loss=loss,optimizer='adam')
     """
-    weights=np.array([1-0.18608124, 1-0.13560335, 1-0.43690263, 1-0.08632019, 1-0.15509259])
+    weights=np.array([0.18608124, 0.13560335, 0.43690263, 0.08632019, 0.15509259])
     weights = K.variable(weights)
     # scale predictions so that the class probas of each sample sum to 1
     y_pred /= K.sum(y_pred, axis=-1, keepdims=True)
@@ -167,10 +167,11 @@ def run_all():
    
     model.compile(optimizer=optimizer, loss=w_categorical_crossentropy, metrics=['accuracy'])
     print(model.summary())
-    val_fold = np.random.permutation(10)
-    for fold in range(10):
-        X_test,  y_test  = get_data(val_fold[fold],seq_len)
-        if fold != val_fold[fold]:
+    v_fold=5
+    # val_fold = np.random.permutation(9)
+    #for v_fold in val_fold: 
+    for fold in range(9):
+        if fold != v_fold:
             X_train,  y_train  = get_data(fold,seq_len)
             history=model.fit([X_train.reshape(-1,seq_len,num_channels,epi_samples,1),X_train.reshape(-1,seq_len,num_channels,epi_samples,1)],
                     y_train, batch_size=batch_size, epochs=num_epochs, verbose=1, 
@@ -181,37 +182,23 @@ def run_all():
             acc_tr.append(history_dict['acc'])
             loss_tr.append(history_dict['loss'])
             model.save('model2.h5')
-            
-        y_hat = model.predict([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)], batch_size=batch_size, verbose=1)
-        F1, F1_macro, ck_s, cmat, acc, acc_macro, TPR, TNR, PPV = validate_model(y_test,y_hat,num_cls) 
+    X_test,  y_test  = get_data(v_fold, seq_len)    
+    y_hat = model.predict([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)], batch_size=batch_size, verbose=1)
+    F1, F1_macro, ck_s, cmat, acc, acc_macro, TPR, TNR, PPV = validate_model(y_test,y_hat,num_cls) 
 
-            # f1, ck, confm, acc = validate_model(y_test,y_hat)
-            
-        cm.append(cmat)
-        f1_s.append(F1)
-        acc_val.append(acc)
-        ck_score.append(ck_s)
+        # f1, ck, confm, acc = validate_model(y_test,y_hat)
+        
+    cm.append(cmat)
+    f1_s.append(F1)
+    acc_val.append(acc)
+    ck_score.append(ck_s)
         
                     # callbacks=keras.callbacks.EarlyStopping(monitor='loss',restore_best_weights=True) )
     
-    ## add train data to eval
-    # balance data
-    # log training history
-    # 
-    # with open('confusion.pkl', 'wb') as f:
-    #     pickle.dump(cm, f)
-    # with open('ck_score.pkl', 'wb') as f:
-    #     pickle.dump(ck_score, f)
-    # # with open('tst_loss_score.pkl', 'wb') as f:
-    # #     pickle.dump(loss_tst, f)
-    # with open('tst_acc_score.pkl', 'wb') as f:
-    #     pickle.dump(acc_tst, f)
-    # with open('f1_score.pkl', 'wb') as f:
-    #     pickle.dump(f1_s, f)    
     np.save('train_acc_res',np.array(acc_tr))
-    # np.save('train_loss_res',np.array(loss_tr))
+    np.save('train_loss_res',np.array(loss_tr))
     np.save('val_acc_res',np.array(acc_val))
-    np.save('val_loss_res',np.array(loss_val))
+    # np.save('val_loss_res',np.array(loss_val))
     np.save('val_f1',np.array(f1_s))
     np.save('val_cm',np.array(cm))
     np.save('val_ck',np.array(ck_score))
