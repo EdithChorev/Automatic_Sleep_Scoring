@@ -47,9 +47,6 @@ def get_data(fold,seq_length): ## cnn only part
     x=np.split(np.array(x), len(x)//seq_length, axis=0)
     y=np.split(np.array(y), len(y)//seq_length, axis=0)
     # per_cat=np.sum(y,axis=0)
-    
-   
-    
     return np.array(x), np.array(y) 
     
 def cnn_model1(name,rate,x_shaped):
@@ -120,15 +117,32 @@ def w_categorical_crossentropy(y_true, y_pred):
     loss = y_true * K.log(y_pred) * weights
     loss = -K.sum(loss, -1)
     return loss
-def validate_model(y_true,y_pred):
+
+def validate_model(y_true,y_pred,num_cls):
     # loss = w_categorical_crossentropy(y_true, y_pred)
-    y_pred = np.argmax(y_pred,axis=2)
-    y_true = np.argmax(y_true,axis=2)
-    f1 = f1_score(y_true, y_pred,labels=range(5))
-    ck = cohen_kappa_score(y_true, y_pred,labels=range(5))
-    cm = confusion_matrix(y_true, y_pred, labels=range(5))
+    y_true = y_true.argmax(axis=2).flatten()
+    y_pred = y_pred.argmax(axis=2).flatten()
+
+    cm = confusion_matrix(y_true, y_pred, labels=range(num_cls))
+    ck = cohen_kappa_score(y_true, y_pred,labels=range(num_cls))
+    cm = cm.astype(np.float32)
+    FP = cm.sum(axis=0) - np.diag(cm)
+    FN = cm.sum(axis=1) - np.diag(cm)
+    TP = np.diag(cm)
+    TN = cm.sum() - (FP + FN + TP)
+     # Sensitivity, hit rate, recall, or true positive rate
+    TPR = TP / (TP + FN)
+    # Specificity or true negative rate
+    TNR = TN / (TN + FP)
+    # Precision or positive predictive value
+    PPV = TP / (TP + FP)
+     # Overall accuracy
+    acc = (TP + TN) / (TP + FP + FN + TN)
+    acc_macro = np.mean(acc)
+    F1 = (2 * PPV * TPR) / (PPV + TPR)
+    F1_macro = np.mean(F1)
     acc = accuracy_score(y_true, y_true)
-    return  f1, ck, cm, acc
+    return  F1, F1_macro, ck, cm, acc, acc_macro, TPR, TNR, PPV
 
 
 def run_all():
@@ -145,6 +159,7 @@ def run_all():
     num_channels = 3
     epi_samples =3000
     seq_len = 5
+    num_cls = 5
     x_shaped=(num_channels,epi_samples,1)
     model=build_merged_model(keep_proba=0.5, x_shaped=x_shaped,seq_len=10)
     optimizer = keras.optimizers.Adam(lr=0.0001,clipnorm=1.0)
@@ -153,30 +168,30 @@ def run_all():
     model.compile(optimizer=optimizer, loss=w_categorical_crossentropy, metrics=['accuracy'])
     print(model.summary())
     val_fold = np.random.permutation(10)
-    for fold in range(1):
+    for fold in range(10):
         X_test,  y_test  = get_data(val_fold[fold],seq_len)
         if fold != val_fold[fold]:
             X_train,  y_train  = get_data(fold,seq_len)
             history=model.fit([X_train.reshape(-1,seq_len,num_channels,epi_samples,1),X_train.reshape(-1,seq_len,num_channels,epi_samples,1)],
                     y_train, batch_size=batch_size, epochs=num_epochs, verbose=1, 
-                    validation_data=([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)],y_test),
-                    validation_freq=10, callbacks=[history])#,validation_data=([X_test.reshape(-1,3,3000,1),X_test.reshape(-1,3,3000,1)],y_test),
+                    callbacks=[history])#, validation_data=([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)],y_test),validation_freq=10,
             
             history_dict=history.history 
             json.dump(history_dict, open('/home/edith/Documents/EEG/history.json', 'w'))   
             acc_tr.append(history_dict['acc'])
             loss_tr.append(history_dict['loss'])
-            acc_val.append(history_dict['val_acc'])
-            loss_val.append(history_dict['val_loss'])
             model.save('model2.h5')
             
-            # y_hat=model.predict([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)], batch_size=batch_size, verbose=1)
+        y_hat = model.predict([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)], batch_size=batch_size, verbose=1)
+        F1, F1_macro, ck_s, cmat, acc, acc_macro, TPR, TNR, PPV = validate_model(y_test,y_hat,num_cls) 
+
             # f1, ck, confm, acc = validate_model(y_test,y_hat)
-            # cm.append(confm)
-            # f1_s.append(f1)
-            # #loss_tst.append(loss)
-            # acc_tst.append(acc)
-            # ck_score.append(ck)
+            
+        cm.append(cmat)
+        f1_s.append(F1)
+        acc_val.append(acc)
+        ck_score.append(ck_s)
+        
                     # callbacks=keras.callbacks.EarlyStopping(monitor='loss',restore_best_weights=True) )
     
     ## add train data to eval
@@ -194,8 +209,12 @@ def run_all():
     # with open('f1_score.pkl', 'wb') as f:
     #     pickle.dump(f1_s, f)    
     np.save('train_acc_res',np.array(acc_tr))
-    np.save('train_loss_res',np.array(loss_tr))
+    # np.save('train_loss_res',np.array(loss_tr))
     np.save('val_acc_res',np.array(acc_val))
     np.save('val_loss_res',np.array(loss_val))
+    np.save('val_f1',np.array(f1_s))
+    np.save('val_cm',np.array(cm))
+    np.save('val_ck',np.array(ck_score))
+    
     pass
 run_all()
