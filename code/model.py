@@ -56,7 +56,7 @@ def cnn_model1(name,rate,x_shaped):
     my_cnn.add(MaxPool2D(pool_size=(8,1), strides=(8,1), padding="same"))
     my_cnn.add(Dropout(rate=rate))
     for _ in range(3):
-        my_cnn.add(Conv2D(filters=60,kernel_size=(8,1),strides=(1,1), padding="same", activation="relu"))
+        my_cnn.add(Conv2D(filters=128,kernel_size=(8,1),strides=(1,1), padding="same", activation="relu"))
     my_cnn.add(MaxPool2D (pool_size=(4,1), strides=(4,1), padding="same"))
     my_cnn.add(Flatten())
     
@@ -69,7 +69,7 @@ def cnn_model2(name,rate,x_shaped):
     my_cnn.add(MaxPool2D(pool_size=(4,1), strides=(4,1), padding="same"))
     my_cnn.add(Dropout(rate=rate))
     for _ in range(3):
-        my_cnn.add(Conv2D(filters=60,kernel_size=(6,1),strides=(1,1), padding="same", activation="relu"))
+        my_cnn.add(Conv2D(filters=128,kernel_size=(6,1),strides=(1,1), padding="same", activation="relu"))
     my_cnn.add(MaxPool2D (pool_size=(2,1), strides=(2,1), padding="same"))
     my_cnn.add(Flatten())
     
@@ -80,10 +80,8 @@ def build_merged_model(keep_proba,x_shaped):
     model1 = cnn_model1('model1', keep_proba, x_shaped)
     model2 = cnn_model2('modle2', keep_proba, x_shaped)    
     
-   
-    
     merged_input = Concatenate()([model1.output,model2.output])
-    merged = Dense(units=60, activation = "relu")(merged_input)
+    merged = Dense(units=128, activation = "relu")(merged_input)
     merged = Dense(units=5, activation = "softmax")(merged)
     model  = Model(inputs=[model1.input,model2.input], outputs=merged)
 
@@ -136,7 +134,7 @@ def run_all():
     cm=[]
     acc_val = []
     ck_score=[]
-    batch_size =4
+    batch_size =16
     x_shaped=(3,3000,1)
     model=build_merged_model(keep_proba=0.5, x_shaped=x_shaped)
     optimizer = keras.optimizers.Adam(lr=0.0001,clipnorm=1.0)
@@ -144,18 +142,22 @@ def run_all():
    
     model.compile(optimizer=optimizer, loss=train_loss, metrics=['accuracy'])
     print(model.summary())
-    v_fold=5
-    for fold in range(9):
-        if fold != v_fold:
-            X_train, X_test, y_train, y_test  = get_data(fold)
-            history=model.fit([X_train.reshape(-1,3,3000,1),X_train.reshape(-1,3,3000,1)],
-                    y_train, batch_size=batch_size, epochs=5, verbose=1, 
-                    callbacks=[history])#,validation_data=([X_test.reshape(-1,3,3000,1),X_test.reshape(-1,3,3000,1)],y_test),
-            
-            history_dict=history.history 
-            json.dump(history_dict, open('/home/edith/Documents/EEG/history.json', 'w'))   
-            acc_tr.append(history_dict['acc'])
-            loss_tr.append(history_dict['loss'])
+    v_fold=9
+    folds=np.random.permutation(10)
+    for _ in range 100:
+        for fold in range(10):
+            if fold != v_fold:
+                X_train, X_test, y_train, y_test  = get_data(fold)
+                history=model.fit([X_train.reshape(-1,3,3000,1),X_train.reshape(-1,3,3000,1)],
+                        y_train, batch_size=batch_size, epochs=1, verbose=1, 
+                        callbacks=[history])#,validation_data=([X_test.reshape(-1,3,3000,1),X_test.reshape(-1,3,3000,1)],y_test),
+                
+                history_dict=history.history 
+                json.dump(history_dict, open('/home/edith/Documents/EEG/history.json', 'w'))   
+                acc_tr.append(history_dict['acc'])
+                loss_tr.append(history_dict['loss'])
+        folds=np.random.permutation(10)
+    model.save('model.h5')
     y_hat=model.predict([X_test.reshape(-1,3,3000,1),X_test.reshape(-1,3,3000,1)], batch_size=batch_size, verbose=1)
     F1, F1_macro, ck_s, cmat, acc, acc_macro, TPR, TNR, PPV = validate_model(y_test,y_hat,5)         
             #cm.append(confusion_matrix(y_test, y_hat, labels=range(5)))
