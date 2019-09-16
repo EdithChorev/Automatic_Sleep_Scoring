@@ -17,38 +17,60 @@ import json
 import pickle
 
 
-def get_data(fold): ## cnn only part
-    name='/home/edith/Documents/EEG/2018/folds/fold'+str(fold)+'_X.npy'
-    x = np.load(name)
-    name='/home/edith/Documents/EEG/2018/folds/fold'+str(fold)+'_Y.npy'
-    y = np.load(name)
-    
-    xx=np.array(np.split(x,x.shape[0]//3,axis = 0))
-    shuffle = np.random.permutation(len(xx))  
-    xx = xx[shuffle]
-    y = y[shuffle]
-    x= []
-    for i in range (len(xx)):
-        tmp = xx[i]
-        for j in np.arange(0,30000,3000):
-            x.append(tmp[:,j:j+3000])  
-    
-    yy = np.split(y,y.shape[0],axis = 0)
-    y=[]
-    for i in range (len(yy)):
-        tmp = yy[i]
-        for j in np.arange(0,30000,3000):
-            y.append(tmp[0][j])  
+class DataGenerator(keras.utils.Sequence):
+    'Generates data for Keras'
+    def __init__(self, list_IDs, batch_size=32, seq_len=10, num_channels=3,epi_samples=3000, n_classes=5, shuffle=True):
+        'Initialization'
+        self.seq_len = seq_len
+        self.num_channels=num_channels
+        self.epi_samples=epi_samples
+        self.batch_size = batch_size
+        self.list_IDs = list_IDs
+        self.n_classes = n_classes
+        self.shuffle = shuffle
+        self.on_epoch_end()
 
-    y=np.array(y)
-    y=OneHotEncoder(sparse=False).fit_transform(y.reshape(-1,1))
-    # per_cat=np.sum(y,axis=0)
-    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, 
-                random_state=42)
-   
-    
-    return np.array(X_train), np.array(X_test), np.array(y_train), np.array(y_test) 
-    
+    def __len__(self):
+        'Denotes the number of batches per epoch'
+        return int(np.floor(len(self.list_IDs) / self.batch_size))
+
+    def __getitem__(self, index):
+        'Generate one batch of data'
+        # Generate indexes of the batch
+        indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
+
+        # Find list of IDs
+        list_IDs_temp = [self.list_IDs[k] for k in indexes]
+
+        # Generate data
+        X, y = self.__data_generation(list_IDs_temp)
+
+        return X, y
+
+    def on_epoch_end(self):
+        'Updates indexes after each epoch'
+        self.indexes = np.arange(len(self.list_IDs))
+        if self.shuffle == True:
+            np.random.shuffle(self.indexes)
+
+    def __data_generation(self, list_IDs_temp):
+        'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
+        # Initialization
+        X = np.empty((self.batch_size, self.seq_len, self.num_channels,self.epi_samples),dtype='float32')
+        
+        y = np.empty((self.batch_size,self.seq_len,self.n_classes), dtype=int)
+        
+        # Generate data
+        for i, ID in enumerate(list_IDs_temp):
+            # Store sample
+            X[i] = np.load(ID)
+
+            # Store classnum_channenum_channelsnum_channelsnum_channelsls
+            
+            y[i] = np.load(ID[:43]+'y'+ID[44:])
+            
+        return [X.reshape(-1,self.seq_len,self.num_channels,self.epi_samples,1),X.reshape(-1,self.seq_len,self.num_channels,self.epi_samples,1)], y
+        
 def cnn_model1(name,rate,x_shaped):
     
     my_cnn = Sequential(name=name)
@@ -130,59 +152,67 @@ def run_all():
     history = History()
     acc_tr = []
     loss_tr = []
-    f1_s = []
-    cm=[]
+    loss_val = []
     acc_val = []
+    f1_s =[]
+    cm=[]
     ck_score=[]
-    batch_size =16
-    x_shaped=(3,3000,1)
-    model=build_merged_model(keep_proba=0.5, x_shaped=x_shaped)
+    batch_size = 4
+    num_epochs = 100
+    num_channels = 3
+    epi_samples =3000
+    seq_len = 1
+    num_cls = 5
+
+    p_name='/home/edith/Documents/EEG/2018/folds/'
+    list_files = []
+    for i in range(9):
+        all_files = os.listdir(p_name+'fold'+str(i))
+        for f in range(len(all_files)//2):
+            list_files.append(p_name+'fold'+str(i)+'/x'+str(f)+'.npy')
+    train_files = np.array(list_files)
+
+    p_name='/home/edith/Documents/EEG/2018/folds/'
+    list_files = []
+
+    all_files = os.listdir(p_name+'fold'+str(9))
+    for f in range(len(all_files)//2):
+        list_files.append(p_name+'fold'+str(i)+'/x'+str(f)+'.npy')
+    val_files = np.array(list_files)
+
+    val_files = val_files[np.random.permutation(len(val_files))]
+    train_files = train_files[np.random.permutation(len(train_files))]
+
+
+    training_generator = DataGenerator(list_IDs=train_files,  batch_size=batch_size,seq_len=seq_len,num_channels=num_channels,epi_samples=epi_samples, 
+                 n_classes=num_cls, shuffle=True)
+    val_generator = DataGenerator(list_IDs=val_files, batch_size=batch_size,seq_len=seq_len,num_channels=num_channels,epi_samples=epi_samples, 
+                 n_classes=num_cls, shuffle=True)
+    x_shaped=(num_channels,epi_samples,1)
+    model=build_merged_model(keep_proba=0.5, x_shaped=x_shaped,seq_len=10)
     optimizer = keras.optimizers.Adam(lr=0.0001,clipnorm=1.0)
     train_loss = keras.losses.categorical_crossentropy
    
     model.compile(optimizer=optimizer, loss=train_loss, metrics=['accuracy'])
     print(model.summary())
-    v_fold=9
-    folds=np.random.permutation(10)
-    for _ in range 100:
-        for fold in range(10):
-            if fold != v_fold:
-                X_train, X_test, y_train, y_test  = get_data(fold)
-                history=model.fit([X_train.reshape(-1,3,3000,1),X_train.reshape(-1,3,3000,1)],
-                        y_train, batch_size=batch_size, epochs=1, verbose=1, 
-                        callbacks=[history])#,validation_data=([X_test.reshape(-1,3,3000,1),X_test.reshape(-1,3,3000,1)],y_test),
-                
-                history_dict=history.history 
-                json.dump(history_dict, open('/home/edith/Documents/EEG/history.json', 'w'))   
-                acc_tr.append(history_dict['acc'])
-                loss_tr.append(history_dict['loss'])
-        folds=np.random.permutation(10)
-    model.save('model.h5')
-    y_hat=model.predict([X_test.reshape(-1,3,3000,1),X_test.reshape(-1,3,3000,1)], batch_size=batch_size, verbose=1)
-    F1, F1_macro, ck_s, cmat, acc, acc_macro, TPR, TNR, PPV = validate_model(y_test,y_hat,5)         
-            #cm.append(confusion_matrix(y_test, y_hat, labels=range(5)))
-        #ck_score.append(cohen_kappa_score(y_test, y_hat))
-                # callbacks=keras.callbacks.EarlyStopping(monitor='loss',restore_best_weights=True) )
-    cm.append(cmat)
-    f1_s.append(F1)
-    acc_val.append(acc)
-    ck_score.append(ck_s)
-    ## add train data to eval
-    # balance data
-    # log training history
-    # 
-    # with open('confusion.pkl', 'wb') as f:
-    #     pickle.dump(cm, f)
-    # with open('ck_score.pkl', 'wb') as f:
-    #     pickle.dump(ck_score, f)
     
-    np.save('train_acc_res',np.array(acc_tr))
-    np.save('train_loss_res',np.array(loss_tr))
-    np.save('val_acc_res',np.array(acc_val))
-    # np.save('val_loss_res',np.array(loss_val))
-    np.save('val_f1',np.array(f1_s))
-    np.save('val_cm',np.array(cm))
-    np.save('val_ck',np.array(ck_score))
+    # val_fold = np.random.permutation(9)
+    #for v_fold in val_fold: 
+    history=model.fit_generator(generator=training_generator,
+                    validation_data=val_generator, 
+                    use_multiprocessing=True,epochs=num_epochs,verbose=1, 
+                    callbacks=[history])
+    # history=model.fit([X_train.reshape(-1,seq_len,num_channels,epi_samples,1),X_train.reshape(-1,seq_len,num_channels,epi_samples,1)],
+    #         y_train, batch_size=batch_size, epochs=num_epochs, verbose=1, 
+    #         callbacks=[history])#, validation_data=([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)],y_test),validation_freq=10,
+    
+    history_dict=history.history 
+    json.dump(history_dict, open('/home/edith/Documents/EEG/history.json', 'w'))   
+    acc_tr.append(history_dict['acc'])
+    loss_tr.append(history_dict['loss'])
+    acc_val.append(history_dict['val_acc'])
+    loss_val.append(history_dict['val_loss'])
+    model.save('model1.h5')
 
     pass
 run_all()
