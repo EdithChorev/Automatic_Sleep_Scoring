@@ -19,9 +19,9 @@ import pickle
 
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
-    def __init__(self, list_IDs, batch_size=32, seq_len=10, num_channels=3,epi_samples=3000, n_classes=5, shuffle=True):
+    def __init__(self, list_IDs, batch_size=32,  num_channels=3,epi_samples=3000, n_classes=5, shuffle=True):
         'Initialization'
-        self.seq_len = seq_len
+        # self.seq_len = seq_len
         self.num_channels=num_channels
         self.epi_samples=epi_samples
         self.batch_size = batch_size
@@ -56,9 +56,9 @@ class DataGenerator(keras.utils.Sequence):
     def __data_generation(self, list_IDs_temp):
         'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
         # Initialization
-        X = np.empty((self.batch_size, self.seq_len, self.num_channels,self.epi_samples),dtype='float32')
+        X = np.empty((self.batch_size,  self.num_channels,self.epi_samples),dtype='float32')
         
-        y = np.empty((self.batch_size,self.seq_len,self.n_classes), dtype=int)
+        y = np.empty((self.batch_size,self.n_classes), dtype=int)
         
         # Generate data
         for i, ID in enumerate(list_IDs_temp):
@@ -69,7 +69,7 @@ class DataGenerator(keras.utils.Sequence):
             
             y[i] = np.load(ID[:43]+'y'+ID[44:])
             
-        return [X.reshape(-1,self.seq_len,self.num_channels,self.epi_samples,1),X.reshape(-1,self.seq_len,self.num_channels,self.epi_samples,1)], y
+        return [X.reshape(-1,self.num_channels,self.epi_samples,1),X.reshape(-1,self.num_channels,self.epi_samples,1)], y
         
 def cnn_model1(name,rate,x_shaped):
     
@@ -184,12 +184,12 @@ def run_all():
     train_files = train_files[np.random.permutation(len(train_files))]
 
 
-    training_generator = DataGenerator(list_IDs=train_files,  batch_size=batch_size,seq_len=seq_len,num_channels=num_channels,epi_samples=epi_samples, 
+    training_generator = DataGenerator(list_IDs=train_files,  batch_size=batch_size,num_channels=num_channels,epi_samples=epi_samples, 
                  n_classes=num_cls, shuffle=True)
-    val_generator = DataGenerator(list_IDs=val_files, batch_size=batch_size,seq_len=seq_len,num_channels=num_channels,epi_samples=epi_samples, 
+    val_generator = DataGenerator(list_IDs=val_files, batch_size=batch_size,num_channels=num_channels,epi_samples=epi_samples, 
                  n_classes=num_cls, shuffle=True)
     x_shaped=(num_channels,epi_samples,1)
-    model=build_merged_model(keep_proba=0.5, x_shaped=x_shaped,seq_len=10)
+    model=build_merged_model(keep_proba=0.5, x_shaped=x_shaped)
     optimizer = keras.optimizers.Adam(lr=0.0001,clipnorm=1.0)
     train_loss = keras.losses.categorical_crossentropy
    
