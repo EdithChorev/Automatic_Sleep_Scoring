@@ -70,7 +70,7 @@ class DataGenerator(keras.utils.Sequence):
 
             # Store classnum_channenum_channelsnum_channelsnum_channelsls
             
-            y[i] = np.load(ID[:43]+'y'+ID[44:])
+            y[i] = np.load(ID[:-5]+'y.npy)
             
         return [X.reshape(-1,self.seq_len,self.num_channels,self.epi_samples,1),X.reshape(-1,self.seq_len,self.num_channels,self.epi_samples,1)], y
     
@@ -179,20 +179,20 @@ def run_all():
     seq_len = 10
     num_cls = 5
 
-    p_name='/home/edith/Documents/EEG/2018/folds/'
+    p_name='~/folds/'
     list_files = []
     for i in range(9):
         all_files = os.listdir(p_name+'fold'+str(i))
         for f in range(len(all_files)//2):
-            list_files.append(p_name+'fold'+str(i)+'/x'+str(f)+'.npy')
+            list_files.append(p_name+'fold'+str(i)+'/'+str(f)+'x.npy')
     train_files = np.array(list_files)
 
-    p_name='/home/edith/Documents/EEG/2018/folds/'
+    p_name='~/folds/'
     list_files = []
 
     all_files = os.listdir(p_name+'fold'+str(9))
     for f in range(len(all_files)//2):
-        list_files.append(p_name+'fold'+str(i)+'/x'+str(f)+'.npy')
+        list_files.append(p_name+'fold'+str(i)+'/'+str(f)+'x.npy')
     val_files = np.array(list_files)
 
     val_files = val_files[np.random.permutation(len(val_files))]
@@ -222,7 +222,7 @@ def run_all():
     #         callbacks=[history])#, validation_data=([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)],y_test),validation_freq=10,
     
     history_dict=history.history 
-    json.dump(history_dict, open('/home/edith/Documents/EEG/history.json', 'w'))   
+    json.dump(history_dict, open('~/model2/history.json', 'w'))   
     acc_tr.append(history_dict['acc'])
     loss_tr.append(history_dict['loss'])
     acc_val.append(history_dict['val_acc'])
@@ -242,13 +242,13 @@ def run_all():
         
                     # callbacks=keras.callbacks.EarlyStopping(monitor='loss',restore_best_weights=True) )
     
-    np.save('train_acc_res',np.array(acc_tr))
-    np.save('train_loss_res',np.array(loss_tr))
-    np.save('val_acc_res',np.array(acc_val))
+    np.save('~/model2/train_acc_res',np.array(acc_tr))
+    np.save('~/model2/train_loss_res',np.array(loss_tr))
+    np.save('~/model2/val_acc_res',np.array(acc_val))
     # np.save('val_loss_res',np.array(loss_val))
-    np.save('val_f1',np.array(f1_s))
-    np.save('val_cm',np.array(cm))
-    np.save('val_ck',np.array(ck_score))
+    np.save('~/model2/val_f1',np.array(f1_s))
+    np.save('~/model2/val_cm',np.array(cm))
+    np.save('~/model2/val_ck',np.array(ck_score))
     
     pass
 run_all()

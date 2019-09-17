@@ -67,7 +67,7 @@ class DataGenerator(keras.utils.Sequence):
 
             # Store classnum_channenum_channelsnum_channelsnum_channelsls
             
-            y[i] = np.load(ID[:43]+'y'+ID[44:])
+            y[i] = np.load(ID[:-5]+'y.npy)
             
         return [X.reshape(-1,self.num_channels,self.epi_samples,1),X.reshape(-1,self.num_channels,self.epi_samples,1)], y
         
@@ -164,20 +164,20 @@ def run_all():
     seq_len = 1
     num_cls = 5
 
-    p_name='/home/edith/Documents/EEG/2018/folds/'
+    p_name='~/folds/'
     list_files = []
     for i in range(9):
         all_files = os.listdir(p_name+'fold'+str(i))
         for f in range(len(all_files)//2):
-            list_files.append(p_name+'fold'+str(i)+'/x'+str(f)+'.npy')
+            list_files.append(p_name+'fold'+str(i)+'/'+str(f)+'x.npy')
     train_files = np.array(list_files)
 
-    p_name='/home/edith/Documents/EEG/2018/folds/'
+    p_name='~/folds/'
     list_files = []
 
     all_files = os.listdir(p_name+'fold'+str(9))
     for f in range(len(all_files)//2):
-        list_files.append(p_name+'fold'+str(i)+'/x'+str(f)+'.npy')
+        list_files.append(p_name+'fold'+str(i)+'/'+str(f)+'x.npy')
     val_files = np.array(list_files)
 
     val_files = val_files[np.random.permutation(len(val_files))]
@@ -207,7 +207,7 @@ def run_all():
     #         callbacks=[history])#, validation_data=([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)],y_test),validation_freq=10,
     
     history_dict=history.history 
-    json.dump(history_dict, open('/home/edith/Documents/EEG/history.json', 'w'))   
+    json.dump(history_dict, open('~/model1/history.json', 'w'))   
     acc_tr.append(history_dict['acc'])
     loss_tr.append(history_dict['loss'])
     acc_val.append(history_dict['val_acc'])
