@@ -213,6 +213,9 @@ def run_all():
     acc_val.append(history_dict['val_acc'])
     loss_val.append(history_dict['val_loss'])
     model.save('model1.h5')
-
+    np.save('~/model1/train_acc_res',np.array(acc_tr))
+    np.save('~/model1/train_loss_res',np.array(loss_tr))
+    np.save('~/model1/val_acc_res',np.array(acc_val))
+    np.save('~/model1/val_loss_res',np.array(loss_val))
     pass
 run_all()

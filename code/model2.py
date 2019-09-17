@@ -245,10 +245,10 @@ def run_all():
     np.save('~/model2/train_acc_res',np.array(acc_tr))
     np.save('~/model2/train_loss_res',np.array(loss_tr))
     np.save('~/model2/val_acc_res',np.array(acc_val))
-    # np.save('val_loss_res',np.array(loss_val))
-    np.save('~/model2/val_f1',np.array(f1_s))
-    np.save('~/model2/val_cm',np.array(cm))
-    np.save('~/model2/val_ck',np.array(ck_score))
+    np.save('~/model2/val_loss_res',np.array(loss_val))
+    # np.save('~/model2/val_f1',np.array(f1_s))
+    # np.save('~/model2/val_cm',np.array(cm))
+    # np.save('~/model2/val_ck',np.array(ck_score))
     
     pass
 run_all()
