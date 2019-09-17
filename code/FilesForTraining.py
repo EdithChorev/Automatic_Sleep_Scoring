@@ -4,7 +4,7 @@ import numpy as np
 seq_length=10
 
 for fold in range(10):
-    p_name='~/data/folds/'
+    p_name='/folder/directory/folds/'
     name='fold' + str(fold)
     os.mkdir(p_name+name)
     x = np.load(p_name+name+'_X.npy')
