@@ -198,10 +198,11 @@ def run_all():
     
     # val_fold = np.random.permutation(9)
     #for v_fold in val_fold: 
+    tb_callback =  keras.callbacks.TensorBoard("home/ubuntu/log_model1/",update_freq='batch',histogram_freq=5)
     history=model.fit_generator(generator=training_generator,
                     validation_data=val_generator, 
                     use_multiprocessing=True,epochs=num_epochs,verbose=1, 
-                    callbacks=[history])
+                    callbacks=[history,tb_callback])
     # history=model.fit([X_train.reshape(-1,seq_len,num_channels,epi_samples,1),X_train.reshape(-1,seq_len,num_channels,epi_samples,1)],
     #         y_train, batch_size=batch_size, epochs=num_epochs, verbose=1, 
     #         callbacks=[history])#, validation_data=([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)],y_test),validation_freq=10,
