@@ -70,7 +70,7 @@ class DataGenerator(keras.utils.Sequence):
 
             # Store classnum_channenum_channelsnum_channelsnum_channelsls
             
-            y[i] = np.load(ID[:-5]+'y.npy)
+            y[i] = np.load(ID[:-5]+'y.npy')
             
         return [X.reshape(-1,self.seq_len,self.num_channels,self.epi_samples,1),X.reshape(-1,self.seq_len,self.num_channels,self.epi_samples,1)], y
     
@@ -80,7 +80,7 @@ def cnn_model1(name,rate,x_shaped):
     my_cnn = MaxPool2D(pool_size=(8,1), strides=(8,1), padding="same")(my_cnn)
     my_cnn = Dropout(rate=rate)(my_cnn)
     for _ in range(3):
-        my_cnn = Conv2D(filters=40,kernel_size=(8,1),strides=(1,1), padding="same", activation="relu")(my_cnn)
+        my_cnn = Conv2D(filters=64,kernel_size=(8,1),strides=(1,1), padding="same", activation="relu")(my_cnn)
     my_cnn = MaxPool2D (pool_size=(4,1), strides=(4,1), padding="same")(my_cnn)
     my_cnn = Flatten()(my_cnn)
     my_cnn = Model(inputs=input,outputs = my_cnn)
@@ -93,7 +93,7 @@ def cnn_model2(name,rate,x_shaped):
     my_cnn = MaxPool2D(pool_size=(4,1), strides=(4,1), padding="same")(my_cnn)
     my_cnn = Dropout(rate=rate)(my_cnn)
     for _ in range(3):
-        my_cnn = Conv2D(filters=40,kernel_size=(6,1),strides=(1,1), padding="same", activation="relu")(my_cnn)
+        my_cnn = Conv2D(filters=64,kernel_size=(6,1),strides=(1,1), padding="same", activation="relu")(my_cnn)
     my_cnn = MaxPool2D (pool_size=(2,1), strides=(2,1), padding="same")(my_cnn)
     my_cnn = Flatten()(my_cnn)
     my_cnn = Model(inputs=input,outputs = my_cnn)
@@ -109,11 +109,11 @@ def build_merged_model(keep_proba,x_shaped,seq_len):
     model2_t= TimeDistributed(model2)(input2)
     merged_cnns =  concatenate([model1_t,model2_t])
     merged_cnns = BatchNormalization()(merged_cnns)
-    merged_cnns = Dense(units=30,activation="relu")(merged_cnns)
+    merged_cnns = Dense(units=16,activation="relu")(merged_cnns)
     merged_cnns = Bidirectional(LSTM(units=32, return_sequences=True, activation="tanh", 
                 recurrent_activation="sigmoid", dropout=keep_proba))(merged_cnns)
-    merged_cnns = Bidirectional(LSTM(units=32, return_sequences=True, activation="tanh", 
-                recurrent_activation="sigmoid", dropout=keep_proba))(merged_cnns)
+   # merged_cnns = Bidirectional(LSTM(units=32, return_sequences=True, activation="tanh", 
+    #            recurrent_activation="sigmoid", dropout=keep_proba))(merged_cnns)
     merged_cnns = BatchNormalization()(merged_cnns)
     predictions = TimeDistributed(Dense(units=5, activation="softmax"))(merged_cnns)
     model=Model(inputs=[input1,input2], outputs=[predictions])
@@ -172,14 +172,14 @@ def run_all():
     f1_s =[]
     cm=[]
     ck_score=[]
-    batch_size = 1
-    num_epochs = 100
+    batch_size = 16
+    num_epochs = 50
     num_channels = 3
     epi_samples =3000
     seq_len = 10
     num_cls = 5
 
-    p_name='~/folds/'
+    p_name='/home/ubuntu/folds/'
     list_files = []
     for i in range(9):
         all_files = os.listdir(p_name+'fold'+str(i))
@@ -187,7 +187,7 @@ def run_all():
             list_files.append(p_name+'fold'+str(i)+'/'+str(f)+'x.npy')
     train_files = np.array(list_files)
 
-    p_name='~/folds/'
+    p_name='/home/ubuntu/folds/'
     list_files = []
 
     all_files = os.listdir(p_name+'fold'+str(9))
@@ -210,19 +210,19 @@ def run_all():
    
     model.compile(optimizer=optimizer, loss=train_loss, metrics=['accuracy'])
     print(model.summary())
-    
+    tb_callback =  keras.callbacks.TensorBoard("home/ubuntu/log_model/",update_freq='batch',histogram_freq=5)
     # val_fold = np.random.permutation(9)
     #for v_fold in val_fold: 
     history=model.fit_generator(generator=training_generator,
                     validation_data=val_generator, 
                     use_multiprocessing=True,epochs=num_epochs,verbose=1, 
-                    callbacks=[history])
+                    callbacks=[history,tb_callback])
     # history=model.fit([X_train.reshape(-1,seq_len,num_channels,epi_samples,1),X_train.reshape(-1,seq_len,num_channels,epi_samples,1)],
     #         y_train, batch_size=batch_size, epochs=num_epochs, verbose=1, 
     #         callbacks=[history])#, validation_data=([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)],y_test),validation_freq=10,
     
     history_dict=history.history 
-    json.dump(history_dict, open('~/model2/history.json', 'w'))   
+    json.dump(history_dict, open('home/ubuntu/model2/history.json', 'w'))   
     acc_tr.append(history_dict['acc'])
     loss_tr.append(history_dict['loss'])
     acc_val.append(history_dict['val_acc'])
@@ -242,10 +242,10 @@ def run_all():
         
                     # callbacks=keras.callbacks.EarlyStopping(monitor='loss',restore_best_weights=True) )
     
-    np.save('~/model2/train_acc_res',np.array(acc_tr))
-    np.save('~/model2/train_loss_res',np.array(loss_tr))
-    np.save('~/model2/val_acc_res',np.array(acc_val))
-    np.save('~/model2/val_loss_res',np.array(loss_val))
+    np.save('/home/ubuntu/model2/train_acc_res',np.array(acc_tr))
+    np.save('/home/ubuntu/model2/train_loss_res',np.array(loss_tr))
+    np.save('home/ubuntu/model2/val_acc_res',np.array(acc_val))
+    np.save('/home/ubuntu/model2/val_loss_res',np.array(loss_val))
     # np.save('~/model2/val_f1',np.array(f1_s))
     # np.save('~/model2/val_cm',np.array(cm))
     # np.save('~/model2/val_ck',np.array(ck_score))
