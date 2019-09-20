@@ -79,7 +79,7 @@ def cnn_model1(name,rate,x_shaped):
     my_cnn = Conv2D(filters=64, kernel_size=(50,1), strides=(8,1), padding="same", input_shape=x_shaped, activation="relu")(input)
     my_cnn = MaxPool2D(pool_size=(8,1), strides=(8,1), padding="same")(my_cnn)
     my_cnn = Dropout(rate=rate)(my_cnn)
-    for _ in range(3):
+    for _ in range(2):
         my_cnn = Conv2D(filters=64,kernel_size=(8,1),strides=(1,1), padding="same", activation="relu")(my_cnn)
     my_cnn = MaxPool2D (pool_size=(4,1), strides=(4,1), padding="same")(my_cnn)
     my_cnn = Flatten()(my_cnn)
@@ -92,7 +92,7 @@ def cnn_model2(name,rate,x_shaped):
     my_cnn = Conv2D(filters=64, kernel_size=(400,1), strides=(50,1), padding="same", input_shape=x_shaped, activation="relu")(input)
     my_cnn = MaxPool2D(pool_size=(4,1), strides=(4,1), padding="same")(my_cnn)
     my_cnn = Dropout(rate=rate)(my_cnn)
-    for _ in range(3):
+    for _ in range(2):
         my_cnn = Conv2D(filters=64,kernel_size=(6,1),strides=(1,1), padding="same", activation="relu")(my_cnn)
     my_cnn = MaxPool2D (pool_size=(2,1), strides=(2,1), padding="same")(my_cnn)
     my_cnn = Flatten()(my_cnn)
@@ -109,7 +109,7 @@ def build_merged_model(keep_proba,x_shaped,seq_len):
     model2_t= TimeDistributed(model2)(input2)
     merged_cnns =  concatenate([model1_t,model2_t])
     merged_cnns = BatchNormalization()(merged_cnns)
-    merged_cnns = Dense(units=16,activation="relu")(merged_cnns)
+    merged_cnns = Dense(units=30,activation="relu")(merged_cnns)
     merged_cnns = Bidirectional(LSTM(units=32, return_sequences=True, activation="tanh", 
                 recurrent_activation="sigmoid", dropout=keep_proba))(merged_cnns)
    # merged_cnns = Bidirectional(LSTM(units=32, return_sequences=True, activation="tanh", 
@@ -173,7 +173,7 @@ def run_all():
     cm=[]
     ck_score=[]
     batch_size = 16
-    num_epochs = 50
+    num_epochs = 100
     num_channels = 3
     epi_samples =3000
     seq_len = 10
@@ -210,7 +210,7 @@ def run_all():
    
     model.compile(optimizer=optimizer, loss=train_loss, metrics=['accuracy'])
     print(model.summary())
-    tb_callback =  keras.callbacks.TensorBoard("home/ubuntu/log_model/",update_freq='batch',histogram_freq=5)
+    tb_callback =  keras.callbacks.TensorBoard("home/ubuntu/log_model2/",update_freq='batch')
     # val_fold = np.random.permutation(9)
     #for v_fold in val_fold: 
     history=model.fit_generator(generator=training_generator,

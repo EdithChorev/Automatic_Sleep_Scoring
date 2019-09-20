@@ -67,7 +67,7 @@ class DataGenerator(keras.utils.Sequence):
 
             # Store classnum_channenum_channelsnum_channelsnum_channelsls
             
-            y[i] = np.load(ID[:-5]+'y.npy)
+            y[i] = np.load(ID[:-5]+'y.npy')
             
         return [X.reshape(-1,self.num_channels,self.epi_samples,1),X.reshape(-1,self.num_channels,self.epi_samples,1)], y
         
@@ -157,14 +157,14 @@ def run_all():
     f1_s =[]
     cm=[]
     ck_score=[]
-    batch_size = 4
+    batch_size = 32
     num_epochs = 100
     num_channels = 3
     epi_samples =3000
     seq_len = 1
     num_cls = 5
 
-    p_name='~/folds/'
+    p_name='/home/ubuntu/folds/'
     list_files = []
     for i in range(9):
         all_files = os.listdir(p_name+'fold'+str(i))
@@ -172,7 +172,7 @@ def run_all():
             list_files.append(p_name+'fold'+str(i)+'/'+str(f)+'x.npy')
     train_files = np.array(list_files)
 
-    p_name='~/folds/'
+    p_name='/home/ubuntu/folds/'
     list_files = []
 
     all_files = os.listdir(p_name+'fold'+str(9))
@@ -201,8 +201,7 @@ def run_all():
     tb_callback =  keras.callbacks.TensorBoard("home/ubuntu/log_model1/",update_freq='batch',histogram_freq=5)
     history=model.fit_generator(generator=training_generator,
                     validation_data=val_generator, 
-                    use_multiprocessing=True,epochs=num_epochs,verbose=1, 
-                    callbacks=[history,tb_callback])
+                    use_multiprocessing=True,epochs=num_epochs,verbose=1, callbacks=[history,tb_callback])
     # history=model.fit([X_train.reshape(-1,seq_len,num_channels,epi_samples,1),X_train.reshape(-1,seq_len,num_channels,epi_samples,1)],
     #         y_train, batch_size=batch_size, epochs=num_epochs, verbose=1, 
     #         callbacks=[history])#, validation_data=([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)],y_test),validation_freq=10,
