@@ -158,7 +158,7 @@ def run_all():
     cm=[]
     ck_score=[]
     batch_size = 32
-    num_epochs = 100
+    num_epochs = 70
     num_channels = 3
     epi_samples =3000
     seq_len = 1
@@ -198,24 +198,25 @@ def run_all():
     
     # val_fold = np.random.permutation(9)
     #for v_fold in val_fold: 
-    tb_callback =  keras.callbacks.TensorBoard("home/ubuntu/log_model1/",update_freq='batch',histogram_freq=5)
+    #tb_callback =  keras.callbacks.TensorBoard("home/ubuntu/log_model1/",update_freq='batch',histogram_freq=5)
     history=model.fit_generator(generator=training_generator,
                     validation_data=val_generator, 
-                    use_multiprocessing=True,epochs=num_epochs,verbose=1, callbacks=[history,tb_callback])
+                    use_multiprocessing=True,epochs=num_epochs,verbose=1, callbacks=[history])
     # history=model.fit([X_train.reshape(-1,seq_len,num_channels,epi_samples,1),X_train.reshape(-1,seq_len,num_channels,epi_samples,1)],
     #         y_train, batch_size=batch_size, epochs=num_epochs, verbose=1, 
     #         callbacks=[history])#, validation_data=([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)],y_test),validation_freq=10,
     
     history_dict=history.history 
-    json.dump(history_dict, open('~/model1/history.json', 'w'))   
+#   # json.dump(history_dict, open('~/model1/history.json', 'w'))   
     acc_tr.append(history_dict['acc'])
     loss_tr.append(history_dict['loss'])
     acc_val.append(history_dict['val_acc'])
     loss_val.append(history_dict['val_loss'])
     model.save('model1.h5')
-    np.save('~/model1/train_acc_res',np.array(acc_tr))
-    np.save('~/model1/train_loss_res',np.array(loss_tr))
-    np.save('~/model1/val_acc_res',np.array(acc_val))
-    np.save('~/model1/val_loss_res',np.array(loss_val))
+    
+    np.save('/home/ubuntu/model1/train_acc_res',np.array(acc_tr))
+    np.save('/home/ubuntu/model1/train_loss_res',np.array(loss_tr))
+    np.save('/home/ubuntu/model1/val_acc_res',np.array(acc_val))
+    np.save('/home/ubuntu/model1/val_loss_res',np.array(loss_val))
     pass
 run_all()

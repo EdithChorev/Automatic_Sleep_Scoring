@@ -61,12 +61,12 @@ class DataGenerator(keras.utils.Sequence):
             
             y[i] = np.load(ID[:-5]+'y.npy')
             
-        return [X.reshape(-1,self.seq_len,self.num_channels,self.epi_samples,1),X.reshape(-1,self.seq_len,self.num_channels,self.epi_samples,1)], y
+        return [X.reshape(-1,self.seq_len,self.num_channels,self.epi_samples,1),X.reshape(-1,self.seq_len,self.num_channels,self.epi_samples,1)], keras.utils.to_categorical(y,5)
 
 def validate_model(y_true,y_pred,num_cls):
     # loss = w_categorical_crossentropy(y_true, y_pred)
-    y_true = y_true.argmax(axis=2).flatten()
-    y_pred = y_pred.argmax(axis=2).flatten()
+    y_true = y_true.argmax(axis=1).flatten()
+    y_pred = y_pred.argmax(axis=1).flatten()
 
     cm = confusion_matrix(y_true, y_pred, labels=range(num_cls))
     ck = cohen_kappa_score(y_true, y_pred,labels=range(num_cls))
@@ -112,10 +112,18 @@ val_generator = DataGenerator(list_IDs=val_files, batch_size=batch_size,seq_len=
 optimizer = keras.optimizers.Adam(lr=0.0001,clipnorm=1.0)
 train_loss = keras.losses.categorical_crossentropy
 
-model = load_model("/home/ubuntu/model2/model2.h5")
+model = load_model("/home/ubuntu/model2.h5")
 y_hat = model.predict_generator(val_generator, verbose=1 )
-labels = (val_generator.class_indices)
-F1, F1_macro, ck_s, cmat, acc, acc_macro, TPR, TNR, PPV = validate_model(labels,y_hat,num_cls) 
+y_hat = np.argmax(y_hat, axis=-1)
+np.save ('/hoe/ubuntu/model2/yhat', y_hat)
+
+labels=[]
+for xb,yb in val_generator:
+    labels.append(yb)
+np.save('/home/ubuntu/model2/ytrue',lables)
+print(np.array(labels).shape)	
+#labels = val_generator.classes
+F1, F1_macro, ck_s, cmat, acc, acc_macro, TPR, TNR, PPV = validate_model(np.array(labels),y_hat,num_cls) 
 print (F1, F1_macro, ck_s, cmat, acc, acc_macro, TPR, TNR, PPV)
 
 np.save('/home/ubuntu/model2/F1',np.array(F1))
@@ -129,4 +137,5 @@ np.save('/home/ubuntu/model2/TNR',np.array(TNR))
 np.save('/home/ubuntu/model2/PPV',np.array(PPV))
 
  #for v_fold in val_fold: 
+
 

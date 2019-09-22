@@ -173,7 +173,7 @@ def run_all():
     cm=[]
     ck_score=[]
     batch_size = 16
-    num_epochs = 1
+    num_epochs =70
     num_channels = 3
     epi_samples =3000
     seq_len = 10
