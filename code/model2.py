@@ -79,7 +79,7 @@ def cnn_model1(name,rate,x_shaped):
     my_cnn = Conv2D(filters=64, kernel_size=(50,1), strides=(8,1), padding="same", input_shape=x_shaped, activation="relu")(input)
     my_cnn = MaxPool2D(pool_size=(8,1), strides=(8,1), padding="same")(my_cnn)
     my_cnn = Dropout(rate=rate)(my_cnn)
-    for _ in range(3):
+    for _ in range(2):
         my_cnn = Conv2D(filters=64,kernel_size=(8,1),strides=(1,1), padding="same", activation="relu")(my_cnn)
     my_cnn = MaxPool2D (pool_size=(4,1), strides=(4,1), padding="same")(my_cnn)
     my_cnn = Flatten()(my_cnn)
@@ -92,7 +92,7 @@ def cnn_model2(name,rate,x_shaped):
     my_cnn = Conv2D(filters=64, kernel_size=(400,1), strides=(50,1), padding="same", input_shape=x_shaped, activation="relu")(input)
     my_cnn = MaxPool2D(pool_size=(4,1), strides=(4,1), padding="same")(my_cnn)
     my_cnn = Dropout(rate=rate)(my_cnn)
-    for _ in range(3):
+    for _ in range(2):
         my_cnn = Conv2D(filters=64,kernel_size=(6,1),strides=(1,1), padding="same", activation="relu")(my_cnn)
     my_cnn = MaxPool2D (pool_size=(2,1), strides=(2,1), padding="same")(my_cnn)
     my_cnn = Flatten()(my_cnn)
@@ -109,7 +109,7 @@ def build_merged_model(keep_proba,x_shaped,seq_len):
     model2_t= TimeDistributed(model2)(input2)
     merged_cnns =  concatenate([model1_t,model2_t])
     merged_cnns = BatchNormalization()(merged_cnns)
-    merged_cnns = Dense(units=16,activation="relu")(merged_cnns)
+    merged_cnns = Dense(units=30,activation="relu")(merged_cnns)
     merged_cnns = Bidirectional(LSTM(units=32, return_sequences=True, activation="tanh", 
                 recurrent_activation="sigmoid", dropout=keep_proba))(merged_cnns)
    # merged_cnns = Bidirectional(LSTM(units=32, return_sequences=True, activation="tanh", 
@@ -173,7 +173,7 @@ def run_all():
     cm=[]
     ck_score=[]
     batch_size = 16
-    num_epochs = 50
+    num_epochs = 1
     num_channels = 3
     epi_samples =3000
     seq_len = 10
@@ -210,25 +210,27 @@ def run_all():
    
     model.compile(optimizer=optimizer, loss=train_loss, metrics=['accuracy'])
     print(model.summary())
-    tb_callback =  keras.callbacks.TensorBoard("home/ubuntu/log_model/",update_freq='batch',histogram_freq=5)
+    #tb_callback =  keras.callbacks.TensorBoard("home/ubuntu/log_model2/",update_freq='batch')
     # val_fold = np.random.permutation(9)
-    #for v_fold in val_fold: 
+        
+#for v_fold in val_fold: 
     history=model.fit_generator(generator=training_generator,
                     validation_data=val_generator, 
                     use_multiprocessing=True,epochs=num_epochs,verbose=1, 
-                    callbacks=[history,tb_callback])
+                    callbacks=[history])
     # history=model.fit([X_train.reshape(-1,seq_len,num_channels,epi_samples,1),X_train.reshape(-1,seq_len,num_channels,epi_samples,1)],
     #         y_train, batch_size=batch_size, epochs=num_epochs, verbose=1, 
     #         callbacks=[history])#, validation_data=([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)],y_test),validation_freq=10,
     
-    history_dict=history.history 
-    json.dump(history_dict, open('home/ubuntu/model2/history.json', 'w'))   
+    history_dict=history.history
+    print(history) 
+   # json.dump(history_dict, open('home/ubuntu/model2/history.json', 'w'))   
     acc_tr.append(history_dict['acc'])
     loss_tr.append(history_dict['loss'])
     acc_val.append(history_dict['val_acc'])
     loss_val.append(history_dict['val_loss'])
  
-    model.save('model2.h5')
+   
     # X_test,  y_test  = get_data(v_fold, seq_len)    
     # y_hat = model.predict([X_test.reshape(-1,seq_len,num_channels,epi_samples,1),X_test.reshape(-1,seq_len,num_channels,epi_samples,1)], batch_size=batch_size, verbose=1)
     #F1, F1_macro, ck_s, cmat, acc, acc_macro, TPR, TNR, PPV = validate_model(y_test,y_hat,num_cls) 
@@ -244,9 +246,10 @@ def run_all():
     
     np.save('/home/ubuntu/model2/train_acc_res',np.array(acc_tr))
     np.save('/home/ubuntu/model2/train_loss_res',np.array(loss_tr))
-    np.save('home/ubuntu/model2/val_acc_res',np.array(acc_val))
+    np.save('/home/ubuntu/model2/val_acc_res',np.array(acc_val))
     np.save('/home/ubuntu/model2/val_loss_res',np.array(loss_val))
-    # np.save('~/model2/val_f1',np.array(f1_s))
+    model.save('model2.h5')     
+ # np.save('~/model2/val_f1',np.array(f1_s))
     # np.save('~/model2/val_cm',np.array(cm))
     # np.save('~/model2/val_ck',np.array(ck_score))
     
