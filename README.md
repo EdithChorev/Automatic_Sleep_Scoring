@@ -20,12 +20,24 @@ Files are named in the form SC4ssNEO-PSG.edf where ss is the subject number, and
 
 The EOG and EEG signals were each sampled at 100 Hz. The submental-EMG signal was electronically highpass filtered, rectified and low-pass filtered after which the resulting EMG envelope expressed in uV rms (root-mean-square) was sampled at 1Hz. Oro-nasal airflow, rectal body temperature and the event marker were also sampled at 1Hz.
 
-Subjects and recordings are further described in the file headers, the descriptive spreadsheet SC-subjects.xls, and in [2]. The PSG.edf files are whole-night polysmnographic sleep recordings containing EEG (from Fpz-Cz and Pz-Oz electrode locations), EOG (horizontal), submental chin EMG, and an event marker. The SCPSG.edf files (see the 'sleep cassette study') often also contain oro-nasal respiration and rectal body temperature.
-
 The *Hypnogram.edf files contain annotations of the sleep patterns that correspond to the PSGs. These patterns (hypnograms) consist of sleep stages W, R, 1, 2, 3, 4, M (Movement time) and ? (not scored). All hypnograms were manually scored by well-trained technicians (identified by the eighth letter of the hypnogram filename) according to the 1968 Rechtschaffen and Kales manual [3], but based on Fpz-Cz/Pz-Oz EEGs instead of C4-A1/C3-A2 EEGs, as suggested by [4]).
-
-All EDF header fields also comply with the EDF+ specs, and unrecorded signals were removed from the ST*PSG.edf files.
 
 The PSG files are formatted in EDF while the hypnograms are in EDF+. The specifications of EDF and EDF+ are on www.edfplus.info and in [5,6]. Each EDF and EDF+ file has a header specifying the patient (in these files anonymized to only gender and age), details of the recording (in particular the recorded time period), and characteristics of the signals including their amplitude calibration.
 
-Sleep Cassette Study and Data The 153 SC* files (SC = Sleep Cassette) were obtained in a 1987-1991 study of age effects on sleep in healthy Caucasians aged 25-101, without any sleep-related medication [2]. Two PSGs of about 20 hours each were recorded during two subsequent day-night periods at the subjects homes. Subjects continued their normal activities but wore a modified Walkman-like cassette-tape recorder described in chapter VI.4 (page 92) of Bob’s 1987 thesis [7].
+## Model
+
+I used a two stream CNN with different filter sizes on two EEG and one ECoG channels (to capture low and high frequency features). Each pass through the was than flattened and connected to a fully connected layer. These features where than used as a single time step for a LSTM network. Over all we used sequence lengths of 10.
+
+## Training and Testing
+
+I Trained the data on 9/10 of the data, using data from all but two pacients. Training ran for 70 epochs on AWS cloud instance using a GPU. Below you can see that trainig error and Accuracy graphs.
+
+![training](training.png)
+
+## Results
+
+Here is an example of the model classification compared to ground truth
+
+![results](results.png)
+
+
