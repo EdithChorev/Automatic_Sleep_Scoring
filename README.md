@@ -32,12 +32,12 @@ I used a two stream CNN with different filter sizes on two EEG and one ECoG chan
 
 I Trained the data on 9/10 of the data, using data from all but two pacients. Training ran for 70 epochs on AWS cloud instance using a GPU. Below you can see that trainig error and Accuracy graphs.
 
-![training](training.png)
+![training](figs/training.png)
 
 ## Results
 
 Here is an example of the model classification compared to ground truth
 
-![results](results.png)
+![results](figs/results.png)
 
 
