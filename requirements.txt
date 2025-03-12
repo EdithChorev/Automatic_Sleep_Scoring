@@ -2,7 +2,7 @@ numpy
 
 matplotlib
 pandas
-tensorflow-gpu==1.14.0
+tensorflow-gpu==2.12.0
 Keras==2.2.5
 sklearn
 json
