@@ -3,7 +3,7 @@ numpy
 matplotlib
 pandas
 tensorflow-gpu==2.12.0
-Keras==2.2.5
+Keras==3.9.0
 sklearn
 json
 pickle
